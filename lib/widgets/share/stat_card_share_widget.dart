@@ -74,13 +74,13 @@ class _StatCardShareWidgetState extends State<StatCardShareWidget> {
           end: Alignment.bottomCenter,
           colors: [
             widget.athlete.teamColor,
-            widget.athlete.teamColor.withOpacity(0.8),
+            widget.athlete.teamColor.withValues(alpha: 0.8),
             widget.athlete.sport.primaryColor,
           ],
         ),
         boxShadow: [
           BoxShadow(
-            color: widget.athlete.teamColor.withOpacity(0.4),
+            color: widget.athlete.teamColor.withValues(alpha: 0.4),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -95,7 +95,7 @@ class _StatCardShareWidgetState extends State<StatCardShareWidget> {
             child: Icon(
               widget.athlete.sport.iconData,
               size: 180,
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
             ),
           ),
 
@@ -133,7 +133,7 @@ class _StatCardShareWidgetState extends State<StatCardShareWidget> {
                 Text(
                   widget.athlete.nameKr,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                     fontSize: 16,
                   ),
                 ),
@@ -156,7 +156,7 @@ class _StatCardShareWidgetState extends State<StatCardShareWidget> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -182,7 +182,7 @@ class _StatCardShareWidgetState extends State<StatCardShareWidget> {
                   Text(
                     '"${_messageController.text}"',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 14,
                       fontStyle: FontStyle.italic,
                       height: 1.4,
@@ -211,7 +211,7 @@ class _StatCardShareWidgetState extends State<StatCardShareWidget> {
                       Text(
                         '2026.02.04',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white.withValues(alpha: 0.7),
                           fontSize: 12,
                         ),
                       ),
@@ -229,13 +229,13 @@ class _StatCardShareWidgetState extends State<StatCardShareWidget> {
                       Icon(
                         Icons.sports_soccer,
                         size: 14,
-                        color: Colors.white.withOpacity(0.6),
+                        color: Colors.white.withValues(alpha: 0.6),
                       ),
                       const SizedBox(width: 4),
                       Text(
                         'K-Player Tracker',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.6),
+                          color: Colors.white.withValues(alpha: 0.6),
                           fontSize: 11,
                         ),
                       ),
@@ -269,7 +269,7 @@ class _StatCardShareWidgetState extends State<StatCardShareWidget> {
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withOpacity(0.7),
+            color: Colors.white.withValues(alpha: 0.7),
             fontSize: 12,
           ),
         ),
@@ -298,7 +298,7 @@ class _StatCardShareWidgetState extends State<StatCardShareWidget> {
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withOpacity(0.7),
+            color: Colors.white.withValues(alpha: 0.7),
             fontSize: 11,
           ),
         ),

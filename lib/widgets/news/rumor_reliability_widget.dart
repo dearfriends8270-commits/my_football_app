@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
 import '../../models/rumor.dart';
 
 /// 루머 신뢰도 계산기 위젯

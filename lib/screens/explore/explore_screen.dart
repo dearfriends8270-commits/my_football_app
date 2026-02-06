@@ -105,7 +105,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: primaryColor.withOpacity(0.1),
+                      color: primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
@@ -249,9 +249,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -336,7 +336,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 4),
           ),
@@ -404,7 +404,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: athlete.teamColor.withOpacity(0.1),
+                              color: athlete.teamColor.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
@@ -583,7 +583,7 @@ class _SportFilteredManageSheet extends ConsumerWidget {
           boxShadow: isFavorite
               ? [
                   BoxShadow(
-                    color: athlete.teamColor.withOpacity(0.3),
+                    color: athlete.teamColor.withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -599,7 +599,7 @@ class _SportFilteredManageSheet extends ConsumerWidget {
                   width: 50,
                   height: 50,
                   decoration: BoxDecoration(
-                    color: athlete.teamColor.withOpacity(0.1),
+                    color: athlete.teamColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Center(

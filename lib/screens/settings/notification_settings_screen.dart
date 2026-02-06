@@ -146,7 +146,7 @@ class _NotificationSettingsScreenState
           Switch(
             value: _masterSwitch,
             onChanged: (value) => setState(() => _masterSwitch = value),
-            activeColor: Colors.white,
+            activeThumbColor: Colors.white,
             activeTrackColor: Colors.white.withValues(alpha: 0.3),
           ),
         ],
@@ -166,7 +166,7 @@ class _NotificationSettingsScreenState
           subtitle: const Text('AI가 알림 빈도를 최적화합니다'),
           value: _fatigueManagement,
           onChanged: (value) => setState(() => _fatigueManagement = value),
-          activeColor: const Color(0xFF1E4A6E),
+          activeThumbColor: const Color(0xFF1E4A6E),
         ),
 
         if (_fatigueManagement) ...[
@@ -231,7 +231,7 @@ class _NotificationSettingsScreenState
             subtitle: const Text('비슷한 내용의 알림을 하나로 묶습니다'),
             value: _groupSimilarNews,
             onChanged: (value) => setState(() => _groupSimilarNews = value),
-            activeColor: const Color(0xFF1E4A6E),
+            activeThumbColor: const Color(0xFF1E4A6E),
           ),
         ],
       ],
@@ -324,7 +324,7 @@ class _NotificationSettingsScreenState
       trailing: Switch(
         value: value,
         onChanged: onChanged,
-        activeColor: const Color(0xFF1E4A6E),
+        activeThumbColor: const Color(0xFF1E4A6E),
       ),
     );
   }
@@ -407,7 +407,7 @@ class _NotificationSettingsScreenState
             _timeSlotNotifications[key] = value;
           });
         },
-        activeColor: const Color(0xFF1E4A6E),
+        activeThumbColor: const Color(0xFF1E4A6E),
       ),
     );
   }

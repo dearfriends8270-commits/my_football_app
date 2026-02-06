@@ -187,7 +187,7 @@ class _AddSourceScreenState extends ConsumerState<AddSourceScreen> {
                 title: '언어',
                 children: [
                   DropdownButtonFormField<String>(
-                    value: _selectedLanguage,
+                    initialValue: _selectedLanguage,
                     decoration: const InputDecoration(
                       prefixIcon: Icon(Icons.language),
                     ),
@@ -224,7 +224,7 @@ class _AddSourceScreenState extends ConsumerState<AddSourceScreen> {
                         _isActive = value;
                       });
                     },
-                    activeColor: const Color(0xFF1E4A6E),
+                    activeThumbColor: const Color(0xFF1E4A6E),
                     contentPadding: EdgeInsets.zero,
                   ),
                 ],

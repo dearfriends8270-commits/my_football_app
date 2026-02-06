@@ -4,6 +4,7 @@ import '../../models/athlete.dart';
 import '../../models/sport_type.dart';
 import '../../providers/athlete_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../utils/app_colors.dart';
 import '../main_screen.dart';
 
 class PickYourStarScreen extends ConsumerStatefulWidget {
@@ -138,7 +139,7 @@ class _PickYourStarScreenState extends ConsumerState<PickYourStarScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnimation,
@@ -188,7 +189,7 @@ class _PickYourStarScreenState extends ConsumerState<PickYourStarScreen>
                 Container(
                   width: 40,
                   height: 2,
-                  color: _currentStep >= 1 ? const Color(0xFF4F46E5) : Colors.grey[700],
+                  color: _currentStep >= 1 ? AppColors.primary : Colors.grey[700],
                 ),
                 _buildStepDot(1),
               ],
@@ -211,7 +212,7 @@ class _PickYourStarScreenState extends ConsumerState<PickYourStarScreen>
       height: isCurrent ? 12 : 10,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isActive ? const Color(0xFF4F46E5) : Colors.grey[700],
+        color: isActive ? AppColors.primary : Colors.grey[700],
         border: isCurrent
             ? Border.all(color: Colors.white, width: 2)
             : null,
@@ -274,10 +275,10 @@ class _PickYourStarScreenState extends ConsumerState<PickYourStarScreen>
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: GridView.builder(
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
-          childAspectRatio: 1.3,
+          crossAxisCount: 3,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 1.0,
         ),
         itemCount: sports.length,
         itemBuilder: (context, index) {
@@ -293,29 +294,22 @@ class _PickYourStarScreenState extends ConsumerState<PickYourStarScreen>
     return GestureDetector(
       onTap: () => _toggleSportSelection(sport),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutCubic,
-        transform: Matrix4.identity()
-          ..translate(0.0, isSelected ? -4.0 : 0.0),
+        duration: const Duration(milliseconds: 250),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isSelected
-                ? [sport.primaryColor, sport.primaryColor.withOpacity(0.7)]
-                : [Colors.grey[850]!, Colors.grey[900]!],
-          ),
+          color: isSelected
+              ? sport.primaryColor.withValues(alpha: 0.15)
+              : AppColors.backgroundCard,
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? sport.primaryColor : Colors.grey[700]!,
-            width: isSelected ? 3 : 1,
+            color: isSelected ? sport.primaryColor : AppColors.border,
+            width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: sport.primaryColor.withOpacity(0.4),
-                    blurRadius: 16,
-                    spreadRadius: 2,
+                    color: sport.primaryColor.withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    spreadRadius: 1,
                   ),
                 ]
               : [],
@@ -324,64 +318,55 @@ class _PickYourStarScreenState extends ConsumerState<PickYourStarScreen>
           children: [
             // 배경 아이콘
             Positioned(
-              right: -10,
-              bottom: -10,
+              right: -8,
+              bottom: -8,
               child: Icon(
                 sport.iconData,
-                size: 80,
-                color: Colors.white.withOpacity(0.1),
+                size: 56,
+                color: (isSelected ? sport.primaryColor : AppColors.textMuted)
+                    .withValues(alpha: 0.12),
               ),
             ),
-
-            // 내용
-            Padding(
-              padding: const EdgeInsets.all(16),
+            // 메인 콘텐츠
+            Center(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Row(
-                    children: [
-                      Text(
-                        sport.icon,
-                        style: const TextStyle(fontSize: 36),
-                      ),
-                      const Spacer(),
-                      if (isSelected)
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.check,
-                            size: 16,
-                            color: sport.primaryColor,
-                          ),
-                        ),
-                    ],
-                  ),
-                  const Spacer(),
+                  Text(sport.icon, style: const TextStyle(fontSize: 32)),
+                  const SizedBox(height: 8),
                   Text(
                     sport.displayName,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    sport.englishName,
                     style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.white.withOpacity(0.6),
-                      letterSpacing: 1,
+                      color: isSelected
+                          ? AppColors.textPrimary
+                          : AppColors.textSecondary,
+                      fontSize: 14,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.w500,
                     ),
                   ),
                 ],
               ),
             ),
+            // 체크 표시
+            if (isSelected)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    color: sport.primaryColor,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check,
+                    color: Colors.white,
+                    size: 14,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -400,8 +385,8 @@ class _PickYourStarScreenState extends ConsumerState<PickYourStarScreen>
           end: Alignment.bottomCenter,
           colors: [
             Colors.transparent,
-            const Color(0xFF0A0A0A).withOpacity(0.9),
-            const Color(0xFF0A0A0A),
+            AppColors.background.withValues(alpha: 0.9),
+            AppColors.background,
           ],
         ),
       ),
@@ -414,14 +399,14 @@ class _PickYourStarScreenState extends ConsumerState<PickYourStarScreen>
             onPressed: isEnabled ? _goToNextStep : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: isEnabled
-                  ? const Color(0xFF4F46E5)
+                  ? AppColors.primary
                   : Colors.grey[800],
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
               elevation: isEnabled ? 8 : 0,
-              shadowColor: const Color(0xFF4F46E5).withOpacity(0.5),
+              shadowColor: AppColors.primary.withValues(alpha: 0.5),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -492,9 +477,9 @@ class _PickYourStarScreenState extends ConsumerState<PickYourStarScreen>
           ),
         ),
 
-        // 선수 그리드
+        // 선수 리스트
         Expanded(
-          child: _buildMasonryGrid(filteredAthletes),
+          child: _buildAthleteList(filteredAthletes),
         ),
 
         // 시작 버튼
@@ -512,10 +497,10 @@ class _PickYourStarScreenState extends ConsumerState<PickYourStarScreen>
             margin: const EdgeInsets.only(right: 8),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: sport.primaryColor.withOpacity(0.2),
+              color: sport.primaryColor.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: sport.primaryColor.withOpacity(0.5),
+                color: sport.primaryColor.withValues(alpha: 0.5),
               ),
             ),
             child: Row(
@@ -539,252 +524,324 @@ class _PickYourStarScreenState extends ConsumerState<PickYourStarScreen>
     );
   }
 
-  Widget _buildMasonryGrid(List<Athlete> athletes) {
+  Widget _buildAthleteList(List<Athlete> athletes) {
     if (athletes.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.person_search, size: 60, color: Colors.grey[600]),
+            Icon(Icons.person_search, size: 60, color: AppColors.textMuted.withValues(alpha: 0.5)),
             const SizedBox(height: 16),
-            Text(
+            const Text(
               '선택된 종목에 선수가 없습니다',
-              style: TextStyle(color: Colors.grey[500], fontSize: 16),
+              style: TextStyle(color: AppColors.textMuted, fontSize: 16),
             ),
           ],
         ),
       );
     }
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        children: _buildMasonryRows(athletes),
-      ),
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      itemCount: athletes.length,
+      itemBuilder: (context, index) {
+        final athlete = athletes[index];
+        return _buildAthleteCard(athlete);
+      },
     );
   }
 
-  List<Widget> _buildMasonryRows(List<Athlete> athletes) {
-    final List<Widget> rows = [];
-    int index = 0;
-
-    while (index < athletes.length) {
-      // 패턴: 2열, 1열(큰 카드), 2열 반복
-      final rowPattern = (rows.length % 3);
-
-      if (rowPattern == 1 && index < athletes.length) {
-        // 1열 큰 카드
-        rows.add(
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _buildAthleteCard(athletes[index], isLarge: true),
-          ),
-        );
-        index++;
-      } else if (index + 1 < athletes.length) {
-        // 2열 작은 카드
-        rows.add(
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _buildAthleteCard(athletes[index], isLarge: false),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildAthleteCard(athletes[index + 1], isLarge: false),
-                ),
-              ],
-            ),
-          ),
-        );
-        index += 2;
-      } else if (index < athletes.length) {
-        // 마지막 홀수 카드
-        rows.add(
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _buildAthleteCard(athletes[index], isLarge: true),
-          ),
-        );
-        index++;
-      }
-    }
-
-    return rows;
-  }
-
-  Widget _buildAthleteCard(Athlete athlete, {required bool isLarge}) {
+  Widget _buildAthleteCard(Athlete athlete) {
     final isSelected = _selectedAthleteIds.contains(athlete.id);
-    final cardHeight = isLarge ? 220.0 : 180.0;
 
     return GestureDetector(
       onTap: () => _toggleAthleteSelection(athlete),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutCubic,
-        height: cardHeight,
-        transform: Matrix4.identity()
-          ..translate(0.0, isSelected ? -8.0 : 0.0),
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.only(bottom: 12),
+        height: 120,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          color: AppColors.backgroundCard,
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? athlete.teamColor : Colors.transparent,
-            width: 3,
+            color: isSelected
+                ? athlete.teamColor.withValues(alpha: 0.6)
+                : AppColors.border,
+            width: isSelected ? 2 : 1,
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: athlete.teamColor.withOpacity(0.4),
-                    blurRadius: 20,
-                    spreadRadius: 2,
-                  ),
-                ]
-              : [],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(17),
+          borderRadius: BorderRadius.circular(15),
           child: Stack(
-            fit: StackFit.expand,
             children: [
-              // 배경 그라데이션
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      athlete.teamColor.withOpacity(0.8),
-                      athlete.teamColor,
-                      athlete.sport.primaryColor,
-                    ],
-                  ),
-                ),
-              ),
-
-              // 선수 실루엣/그래픽 영역 (플레이스홀더)
-              Positioned(
-                right: -20,
-                bottom: -20,
-                child: Icon(
-                  athlete.sport.iconData,
-                  size: isLarge ? 150 : 100,
-                  color: Colors.white.withOpacity(0.1),
-                ),
-              ),
-
-              // 상단 태그
-              Positioned(
-                top: 12,
-                left: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        athlete.sport.icon,
-                        style: const TextStyle(fontSize: 12),
+              Row(
+                children: [
+                  // ── 왼쪽: 선수 비주얼 영역 ──
+                  Container(
+                    width: 90,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          athlete.teamColor,
+                          athlete.teamColor.withValues(alpha: 0.6),
+                        ],
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${athlete.sport.englishName} · ${athlete.team.split(' ').first}',
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: Colors.white70,
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 0.5,
+                    ),
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          right: -10,
+                          bottom: -10,
+                          child: Icon(
+                            athlete.sport.iconData,
+                            size: 64,
+                            color: Colors.white.withValues(alpha: 0.12),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // 선택 체크 표시
-              if (isSelected)
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.check,
-                      size: 16,
-                      color: athlete.teamColor,
-                    ),
-                  ),
-                ),
-
-              // 하단 선수 정보
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withOpacity(0.8),
+                        Center(
+                          child: Text(
+                            athlete.sport.icon,
+                            style: const TextStyle(fontSize: 32),
+                          ),
+                        ),
+                        Positioned(
+                          top: 8,
+                          left: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.4),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '${athlete.sport.icon} ${athlete.sport.englishName.toUpperCase()}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 8,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 8,
+                          left: 8,
+                          right: 4,
+                          child: Text(
+                            athlete.nameKr,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              shadows: [
+                                Shadow(color: Colors.black54, blurRadius: 4),
+                              ],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        athlete.lastName,
-                        style: TextStyle(
-                          fontSize: isLarge ? 32 : 24,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          letterSpacing: 2,
-                          height: 1,
-                        ),
+
+                  // ── 중앙: 선수 정보 ──
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            '${athlete.name.split(' ').first}-${athlete.name.split(' ').last} ${athlete.lastName.toUpperCase()}',
+                            style: const TextStyle(
+                              color: AppColors.textMuted,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: 0.5,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            athlete.nameKr,
+                            style: const TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            athlete.statSummary,
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const Text(
+                                '시즌평점 ',
+                                style: TextStyle(
+                                  color: AppColors.textMuted,
+                                  fontSize: 11,
+                                ),
+                              ),
+                              Text(
+                                _getAthleteRating(athlete),
+                                style: const TextStyle(
+                                  color: AppColors.accent,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        athlete.nameKr,
-                        style: TextStyle(
-                          fontSize: isLarge ? 14 : 12,
-                          color: Colors.white70,
-                          fontWeight: FontWeight.w500,
+                    ),
+                  ),
+
+                  // ── 오른쪽: 팀 정보 ──
+                  Container(
+                    width: 64,
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 12, horizontal: 4),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: athlete.teamColor.withValues(alpha: 0.2),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: athlete.teamColor.withValues(alpha: 0.4),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              athlete.team.length >= 3
+                                  ? athlete.team.substring(0, 3)
+                                  : athlete.team,
+                              style: TextStyle(
+                                color: athlete.teamColor,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        athlete.statSummary,
-                        style: TextStyle(
-                          fontSize: isLarge ? 12 : 10,
-                          color: Colors.white60,
+                        const SizedBox(height: 6),
+                        Text(
+                          athlete.team,
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 2),
+                        Text(
+                          _getLeagueName(athlete),
+                          style: const TextStyle(
+                            color: AppColors.textMuted,
+                            fontSize: 8,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              // 체크마크
+              if (isSelected)
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Container(
+                    width: 26,
+                    height: 26,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.4),
+                          blurRadius: 6,
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.check,
+                      color: Colors.white,
+                      size: 16,
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  String _getAthleteRating(Athlete athlete) {
+    switch (athlete.sport) {
+      case SportType.football:
+        return (athlete.rating ?? 0).toStringAsFixed(1);
+      case SportType.baseball:
+        return (athlete.battingAvg != null)
+            ? '.${(athlete.battingAvg! * 1000).toInt()}'
+            : '-';
+      case SportType.badminton:
+      case SportType.swimming:
+      case SportType.golf:
+        return '${athlete.worldRanking ?? '-'}위';
+      case SportType.basketball:
+        return '${athlete.stats['points'] ?? '-'}';
+    }
+  }
+
+  String _getLeagueName(Athlete athlete) {
+    switch (athlete.sport) {
+      case SportType.football:
+        if (athlete.team.contains('Paris') || athlete.team.contains('PSG')) {
+          return 'Ligue 1';
+        }
+        if (athlete.team.contains('Tottenham')) return 'Premier League';
+        if (athlete.team.contains('Bayern')) return 'Bundesliga';
+        if (athlete.team.contains('LAFC')) return 'MLS';
+        return 'League';
+      case SportType.baseball:
+        return 'MLB';
+      case SportType.badminton:
+        return 'BWF Tour';
+      case SportType.swimming:
+        return 'World Aquatics';
+      case SportType.golf:
+        return 'LPGA Tour';
+      case SportType.basketball:
+        return 'KBL';
+    }
   }
 
   Widget _buildStartButton() {
@@ -799,8 +856,8 @@ class _PickYourStarScreenState extends ConsumerState<PickYourStarScreen>
           end: Alignment.bottomCenter,
           colors: [
             Colors.transparent,
-            const Color(0xFF0A0A0A).withOpacity(0.9),
-            const Color(0xFF0A0A0A),
+            AppColors.background.withValues(alpha: 0.9),
+            AppColors.background,
           ],
         ),
       ),
@@ -813,14 +870,14 @@ class _PickYourStarScreenState extends ConsumerState<PickYourStarScreen>
             onPressed: isEnabled ? _onStartPressed : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: isEnabled
-                  ? const Color(0xFF4F46E5)
+                  ? AppColors.primary
                   : Colors.grey[800],
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
               elevation: isEnabled ? 8 : 0,
-              shadowColor: const Color(0xFF4F46E5).withOpacity(0.5),
+              shadowColor: AppColors.primary.withValues(alpha: 0.5),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,

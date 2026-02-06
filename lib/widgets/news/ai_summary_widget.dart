@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
 import '../../models/news_summary.dart';
 
 /// AI 3줄 요약 위젯 - 현지 언론 뉴스를 AI가 요약

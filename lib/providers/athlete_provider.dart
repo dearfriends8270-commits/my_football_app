@@ -8,6 +8,7 @@ class AthleteState {
   final List<Athlete> favoriteAthletes;
   final Athlete? selectedAthlete;
   final SportType? selectedSport;
+  final Set<SportType> followedSports;
   final bool isLoading;
 
   const AthleteState({
@@ -15,6 +16,7 @@ class AthleteState {
     this.favoriteAthletes = const [],
     this.selectedAthlete,
     this.selectedSport,
+    this.followedSports = const <SportType>{},
     this.isLoading = false,
   });
 
@@ -23,6 +25,7 @@ class AthleteState {
     List<Athlete>? favoriteAthletes,
     Athlete? selectedAthlete,
     SportType? selectedSport,
+    Set<SportType>? followedSports,
     bool? isLoading,
   }) {
     return AthleteState(
@@ -30,6 +33,7 @@ class AthleteState {
       favoriteAthletes: favoriteAthletes ?? this.favoriteAthletes,
       selectedAthlete: selectedAthlete ?? this.selectedAthlete,
       selectedSport: selectedSport ?? this.selectedSport,
+      followedSports: followedSports ?? this.followedSports,
       isLoading: isLoading ?? this.isLoading,
     );
   }
@@ -65,10 +69,8 @@ class AthleteNotifier extends StateNotifier<AthleteState> {
     final index = currentFavorites.indexWhere((a) => a.id == athlete.id);
 
     if (index >= 0) {
-      // 이미 즐겨찾기 -> 제거
       currentFavorites.removeAt(index);
     } else {
-      // 즐겨찾기 추가
       final updatedAthlete = athlete.copyWith(
         isFavorite: true,
         favoriteOrder: currentFavorites.length,
@@ -88,9 +90,14 @@ class AthleteNotifier extends StateNotifier<AthleteState> {
       );
     }).toList();
 
+    // 선수들의 종목을 자동 팔로우
+    final sports = updatedAthletes.map((a) => a.sport).toSet();
+    final updatedSports = Set<SportType>.from(state.followedSports)..addAll(sports);
+
     state = state.copyWith(
       favoriteAthletes: updatedAthletes,
       selectedAthlete: updatedAthletes.isNotEmpty ? updatedAthletes.first : null,
+      followedSports: updatedSports,
     );
   }
 
@@ -117,7 +124,6 @@ class AthleteNotifier extends StateNotifier<AthleteState> {
     final item = favorites.removeAt(oldIndex);
     favorites.insert(newIndex, item);
 
-    // 순서 업데이트
     final updatedFavorites = favorites.asMap().entries.map((entry) {
       return entry.value.copyWith(favoriteOrder: entry.key);
     }).toList();
@@ -125,7 +131,7 @@ class AthleteNotifier extends StateNotifier<AthleteState> {
     state = state.copyWith(favoriteAthletes: updatedFavorites);
   }
 
-  /// 즐겨찾기 추가
+  /// 즐겨찾기 추가 (해당 종목 자동 팔로우)
   void addFavorite(Athlete athlete) {
     if (state.favoriteAthletes.any((a) => a.id == athlete.id)) return;
 
@@ -134,17 +140,51 @@ class AthleteNotifier extends StateNotifier<AthleteState> {
       favoriteOrder: state.favoriteAthletes.length,
     );
     final updated = [...state.favoriteAthletes, updatedAthlete];
-    state = state.copyWith(favoriteAthletes: updated);
+
+    // 해당 종목 자동 팔로우
+    final updatedSports = Set<SportType>.from(state.followedSports)..add(athlete.sport);
+
+    state = state.copyWith(
+      favoriteAthletes: updated,
+      followedSports: updatedSports,
+    );
   }
 
   /// 즐겨찾기 제거
   void removeFavorite(String athleteId) {
     final updated = state.favoriteAthletes.where((a) => a.id != athleteId).toList();
-    // 순서 재정렬
     final reordered = updated.asMap().entries.map((entry) {
       return entry.value.copyWith(favoriteOrder: entry.key);
     }).toList();
     state = state.copyWith(favoriteAthletes: reordered);
+  }
+
+  // ─── 팔로우 종목 관리 ───
+
+  /// 팔로우 종목 추가
+  void addFollowedSport(SportType sport) {
+    final updated = Set<SportType>.from(state.followedSports)..add(sport);
+    state = state.copyWith(followedSports: updated);
+  }
+
+  /// 팔로우 종목 제거
+  void removeFollowedSport(SportType sport) {
+    final updated = Set<SportType>.from(state.followedSports)..remove(sport);
+    state = state.copyWith(followedSports: updated);
+  }
+
+  /// 팔로우 종목 토글
+  void toggleFollowedSport(SportType sport) {
+    if (state.followedSports.contains(sport)) {
+      removeFollowedSport(sport);
+    } else {
+      addFollowedSport(sport);
+    }
+  }
+
+  /// 팔로우 종목 일괄 설정
+  void setFollowedSports(Set<SportType> sports) {
+    state = state.copyWith(followedSports: sports);
   }
 }
 
@@ -197,3 +237,18 @@ final athletesBySportProvider =
     Provider.family<List<Athlete>, SportType>((ref, sport) {
   return ref.watch(athleteProvider).getAthletesBySport(sport);
 });
+
+/// 팔로우 종목 Provider
+final followedSportsProvider = Provider<Set<SportType>>((ref) {
+  return ref.watch(athleteProvider).followedSports;
+});
+
+/// 종목만 팔로우 (선수 없는 종목) Provider
+final sportOnlyFollowsProvider = Provider<Set<SportType>>((ref) {
+  final state = ref.watch(athleteProvider);
+  final sportsWithAthletes = state.favoriteAthletes.map((a) => a.sport).toSet();
+  return state.followedSports.difference(sportsWithAthletes);
+});
+
+/// MainScreen 탭 인덱스 Provider
+final mainTabIndexProvider = StateProvider<int>((ref) => 2);

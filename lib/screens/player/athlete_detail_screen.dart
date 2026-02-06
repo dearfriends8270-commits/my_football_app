@@ -106,7 +106,7 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
           end: Alignment.bottomRight,
           colors: [
             athlete.teamColor,
-            athlete.teamColor.withOpacity(0.8),
+            athlete.teamColor.withValues(alpha: 0.8),
             athlete.sport.primaryColor,
           ],
         ),
@@ -120,7 +120,7 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
             child: Icon(
               athlete.sport.iconData,
               size: 220,
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
             ),
           ),
 
@@ -136,7 +136,7 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -167,7 +167,7 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
                   athlete.nameKr,
                   style: TextStyle(
                     fontSize: 18,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                   ),
                 ),
 
@@ -178,7 +178,7 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
                   athlete.statSummary,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                   ),
                 ),
               ],
@@ -221,7 +221,7 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 20,
               offset: const Offset(0, 4),
             ),
@@ -340,7 +340,7 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 4),
           ),
@@ -412,7 +412,7 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
             padding: const EdgeInsets.all(16),
             margin: const EdgeInsets.symmetric(horizontal: 4),
             decoration: BoxDecoration(
-              color: (stat['color'] as Color).withOpacity(0.1),
+              color: (stat['color'] as Color).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
@@ -473,8 +473,8 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      athlete.teamColor.withOpacity(0.8),
-                      athlete.sport.primaryColor.withOpacity(0.8),
+                      athlete.teamColor.withValues(alpha: 0.8),
+                      athlete.sport.primaryColor.withValues(alpha: 0.8),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(20),
@@ -512,9 +512,9 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
         margin: const EdgeInsets.symmetric(horizontal: 20),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: athlete.teamColor.withOpacity(0.1),
+          color: athlete.teamColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: athlete.teamColor.withOpacity(0.3)),
+          border: Border.all(color: athlete.teamColor.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [
@@ -565,7 +565,7 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 4),
           ),

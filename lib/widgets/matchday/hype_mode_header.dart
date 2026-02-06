@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/match.dart';
 import '../../providers/matchday_provider.dart';
-import '../../services/matchday_service.dart';
 
 /// Hype Mode 헤더 - 경기 6시간 전부터 활성화
 class HypeModeHeader extends ConsumerStatefulWidget {

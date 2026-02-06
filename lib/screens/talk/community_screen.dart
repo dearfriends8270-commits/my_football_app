@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../providers/theme_provider.dart';
 import '../../providers/athlete_provider.dart';
 import '../../models/athlete.dart';
 import '../../models/sport_type.dart';
 import '../../models/talk_post.dart';
+import '../../utils/app_colors.dart';
 import '../../utils/auth_guard.dart';
 import 'talk_write_screen.dart';
 
-/// 전체 커뮤니티 화면 (홈 탭용) - 선수별 필터 + 카테고리 탭 통합
+/// 전체 커뮤니티 화면 (홈 탭용) - 소식/선수 페이지 스타일 헤더 + 카테고리 탭 통합
 class CommunityScreen extends ConsumerStatefulWidget {
   const CommunityScreen({super.key});
 
@@ -18,14 +18,14 @@ class CommunityScreen extends ConsumerStatefulWidget {
 
 class _CommunityScreenState extends ConsumerState<CommunityScreen>
     with SingleTickerProviderStateMixin {
-  String? _selectedAthleteId; // null이면 전체
+  String? _selectedAthleteId;
   String? _selectedAthleteName;
   late TabController _tabController;
   String _searchQuery = '';
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
+  SportType? _filterSport;
 
-  // 카테고리 목록 (TalkCategory 기반)
   final List<TalkCategory> _categories = TalkCategory.values;
 
   @override
@@ -46,302 +46,553 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen>
 
   @override
   Widget build(BuildContext context) {
-    final themeState = ref.watch(appThemeProvider);
-    final favoriteAthletes = ref.watch(favoriteAthletesProvider);
+    final athleteState = ref.watch(athleteProvider);
+    final favoriteAthletes = athleteState.favoriteAthletes;
+    final selectedAthlete = athleteState.selectedAthlete ??
+        (favoriteAthletes.isNotEmpty ? favoriteAthletes.first : null);
+    final followedSports = ref.watch(followedSportsProvider);
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
-      body: Column(
-        children: [
-          // 검색바 (선택적 표시)
-          if (_isSearching) _buildSearchBar(themeState.primaryColor),
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            // 상단 헤더: 타이틀 + 검색
+            _buildTopHeader(),
 
-          // 선수 필터 슬라이더
-          _buildAthleteFilter(favoriteAthletes, themeState.primaryColor),
+            const SizedBox(height: 12),
 
-          // 카테고리 탭 바
-          _buildCategoryTabBar(themeState.primaryColor),
+            // 선수 선택기: < 이강인 > 편집
+            if (favoriteAthletes.isNotEmpty)
+              _buildAthleteSelector(favoriteAthletes, selectedAthlete),
 
-          // 탭 콘텐츠
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: _categories.map((category) {
-                return _buildPostList(category);
-              }).toList(),
+            const SizedBox(height: 14),
+
+            // 스포츠 필터 바
+            _buildSportFilterBar(followedSports),
+
+            const SizedBox(height: 10),
+
+            // 검색바 (토글)
+            if (_isSearching) _buildSearchBar(),
+
+            // 카테고리 탭 바 (종목 필터 바 바로 아래)
+            _buildCategoryTabBar(),
+
+            // 탭 콘텐츠
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: _categories.map((category) {
+                  return _buildPostList(category);
+                }).toList(),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       // 글쓰기 FAB
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // 로그인 체크
-          if (!AuthGuard.checkAuth(context, ref)) return;
-
-          // 선수 선택 안 했으면 선수 선택 다이얼로그
-          if (_selectedAthleteId == null) {
-            _showSelectAthleteDialog(favoriteAthletes);
-          } else {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => TalkWriteScreen(
-                  playerId: _selectedAthleteId!,
-                  playerName: _selectedAthleteName ?? '',
+      floatingActionButton: Container(
+        margin: const EdgeInsets.only(bottom: 70),
+        child: FloatingActionButton.extended(
+          onPressed: () {
+            if (!AuthGuard.checkAuth(context, ref)) return;
+            if (_selectedAthleteId == null) {
+              _showSelectAthleteDialog(favoriteAthletes);
+            } else {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => TalkWriteScreen(
+                    playerId: _selectedAthleteId!,
+                    playerName: _selectedAthleteName ?? '',
+                  ),
                 ),
-              ),
-            );
-          }
-        },
-        backgroundColor: themeState.primaryColor,
-        icon: const Icon(Icons.edit, color: Colors.white),
-        label: const Text(
-          '글쓰기',
-          style: TextStyle(color: Colors.white),
+              );
+            }
+          },
+          backgroundColor: AppColors.primary,
+          icon: const Icon(Icons.edit, color: Colors.white, size: 18),
+          label: const Text(
+            '글쓰기',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
+          ),
         ),
       ),
     );
   }
 
-  /// 검색바
-  Widget _buildSearchBar(Color primaryColor) {
+  // ─────────────────────────────────────────
+  // 상단 헤더
+  // ─────────────────────────────────────────
+
+  Widget _buildTopHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Row(
+        children: [
+          // 뒤로가기 아이콘 (장식)
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.backgroundCard,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: AppColors.border.withValues(alpha: 0.5),
+              ),
+            ),
+            child: const Icon(
+              Icons.arrow_back_ios_new,
+              color: AppColors.textSecondary,
+              size: 16,
+            ),
+          ),
+
+          const Spacer(),
+
+          // "톡" 타이틀
+          const Text(
+            '톡',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+
+          const Spacer(),
+
+          // 검색 버튼
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _isSearching = !_isSearching;
+                if (!_isSearching) {
+                  _searchQuery = '';
+                  _searchController.clear();
+                }
+              });
+            },
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: _isSearching
+                    ? AppColors.primary.withValues(alpha: 0.2)
+                    : AppColors.backgroundCard,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: _isSearching
+                      ? AppColors.primary.withValues(alpha: 0.5)
+                      : AppColors.border.withValues(alpha: 0.5),
+                ),
+              ),
+              child: Icon(
+                _isSearching ? Icons.search_off : Icons.search,
+                color: _isSearching ? AppColors.primary : AppColors.textSecondary,
+                size: 18,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────
+  // 선수 선택기
+  // ─────────────────────────────────────────
+
+  Widget _buildAthleteSelector(List<Athlete> favorites, Athlete? selected) {
+    final currentIndex = selected != null
+        ? favorites.indexWhere((a) => a.id == selected.id)
+        : 0;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // 왼쪽 화살표
+          GestureDetector(
+            onTap: () {
+              if (favorites.length <= 1) return;
+              final prevIndex =
+                  (currentIndex - 1 + favorites.length) % favorites.length;
+              ref
+                  .read(athleteProvider.notifier)
+                  .selectAthlete(favorites[prevIndex]);
+              setState(() {
+                _selectedAthleteId = favorites[prevIndex].id;
+                _selectedAthleteName = favorites[prevIndex].nameKr;
+              });
+            },
+            child: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: AppColors.backgroundCard,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: AppColors.border.withValues(alpha: 0.5),
+                ),
+              ),
+              child: const Icon(
+                Icons.chevron_left,
+                color: AppColors.textSecondary,
+                size: 20,
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 16),
+
+          // 선수 이름
+          GestureDetector(
+            onTap: () {
+              // 전체 <-> 선수 필터 토글
+              if (_selectedAthleteId != null) {
+                setState(() {
+                  _selectedAthleteId = null;
+                  _selectedAthleteName = null;
+                });
+              } else if (selected != null) {
+                setState(() {
+                  _selectedAthleteId = selected.id;
+                  _selectedAthleteName = selected.nameKr;
+                });
+              }
+            },
+            child: Column(
+              children: [
+                Text(
+                  _selectedAthleteId != null
+                      ? (_selectedAthleteName ?? selected?.nameKr ?? '전체')
+                      : (selected?.nameKr ?? '전체'),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                if (_selectedAthleteId != null)
+                  Text(
+                    '선수 필터 적용 중',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: AppColors.primary.withValues(alpha: 0.8),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          const SizedBox(width: 16),
+
+          // 오른쪽 화살표
+          GestureDetector(
+            onTap: () {
+              if (favorites.length <= 1) return;
+              final nextIndex = (currentIndex + 1) % favorites.length;
+              ref
+                  .read(athleteProvider.notifier)
+                  .selectAthlete(favorites[nextIndex]);
+              setState(() {
+                _selectedAthleteId = favorites[nextIndex].id;
+                _selectedAthleteName = favorites[nextIndex].nameKr;
+              });
+            },
+            child: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: AppColors.backgroundCard,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: AppColors.border.withValues(alpha: 0.5),
+                ),
+              ),
+              child: const Icon(
+                Icons.chevron_right,
+                color: AppColors.textSecondary,
+                size: 20,
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 12),
+
+          // 편집 링크 → 선수 탭으로 이동
+          GestureDetector(
+            onTap: () {
+              ref.read(mainTabIndexProvider.notifier).state = 1;
+            },
+            child: const Text(
+              '편집',
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.primary,
+                decoration: TextDecoration.underline,
+                decorationColor: AppColors.primary,
+              ),
+            ),
+          ),
+
+          // 필터 해제 버튼
+          if (_selectedAthleteId != null) ...[
+            const SizedBox(width: 10),
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  _selectedAthleteId = null;
+                  _selectedAthleteName = null;
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.live.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: AppColors.live.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: const Text(
+                  '전체',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.live,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────
+  // 스포츠 필터 바
+  // ─────────────────────────────────────────
+
+  Widget _buildSportFilterBar(Set<SportType> followedSports) {
+    final sportsList = followedSports.toList();
+    final allItems = <SportType?>[null, ...sportsList];
+
+    Widget buildTab(SportType? sport, bool isSelected) {
+      return GestureDetector(
+        onTap: () {
+          setState(() {
+            _filterSport = sport;
+          });
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: isSelected ? AppColors.primary : Colors.transparent,
+                width: 2.5,
+              ),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(sport?.icon ?? '🌐', style: const TextStyle(fontSize: 16)),
+              const SizedBox(width: 4),
+              Text(
+                sport?.displayName ?? '전체',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  color: isSelected
+                      ? AppColors.textPrimary
+                      : AppColors.textMuted,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (allItems.length <= 4) {
+      return Container(
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: AppColors.border.withValues(alpha: 0.3),
+              width: 1,
+            ),
+          ),
+        ),
+        child: Row(
+          children: allItems.map((sport) {
+            final isSelected = _filterSport == sport;
+            return Expanded(child: buildTab(sport, isSelected));
+          }).toList(),
+        ),
+      );
+    }
+
     return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: AppColors.border.withValues(alpha: 0.3),
+            width: 1,
+          ),
+        ),
+      ),
+      height: 44,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        itemCount: allItems.length,
+        itemBuilder: (context, index) {
+          final sport = allItems[index];
+          final isSelected = _filterSport == sport;
+          return buildTab(sport, isSelected);
+        },
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────
+  // 검색바
+  // ─────────────────────────────────────────
+
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: Row(
         children: [
           Expanded(
-            child: TextField(
-              controller: _searchController,
-              autofocus: true,
-              decoration: InputDecoration(
-                hintText: '게시글 검색...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          setState(() {
-                            _searchQuery = '';
-                            _searchController.clear();
-                          });
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: Colors.grey.shade100,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
+            child: Container(
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.backgroundCard,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColors.border.withValues(alpha: 0.5),
                 ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
               ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                });
-              },
+              child: TextField(
+                controller: _searchController,
+                autofocus: true,
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 14,
+                ),
+                decoration: InputDecoration(
+                  hintText: '게시글 검색...',
+                  hintStyle: const TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 14,
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.search,
+                    color: AppColors.textMuted,
+                    size: 20,
+                  ),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(
+                            Icons.clear,
+                            color: AppColors.textMuted,
+                            size: 18,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _searchQuery = '';
+                              _searchController.clear();
+                            });
+                          },
+                        )
+                      : null,
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                  });
+                },
+              ),
             ),
           ),
           const SizedBox(width: 8),
-          TextButton(
-            onPressed: () {
+          GestureDetector(
+            onTap: () {
               setState(() {
                 _isSearching = false;
                 _searchQuery = '';
                 _searchController.clear();
               });
             },
-            child: const Text('취소'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 선수 필터 위젯
-  Widget _buildAthleteFilter(List<Athlete> athletes, Color primaryColor) {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Icon(Icons.filter_list, size: 18, color: Colors.grey[600]),
-                const SizedBox(width: 8),
-                Text(
-                  '선수 필터',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[700],
-                  ),
-                ),
-                const Spacer(),
-                // 검색 버튼
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _isSearching = true;
-                    });
-                  },
-                  child: Icon(Icons.search, size: 22, color: Colors.grey[600]),
-                ),
-                if (_selectedAthleteId != null) ...[
-                  const SizedBox(width: 12),
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedAthleteId = null;
-                        _selectedAthleteName = null;
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '필터 해제',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Icon(Icons.close, size: 14, color: Colors.grey[600]),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 70,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              itemCount: athletes.length + 1, // +1 for "전체"
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  // 전체 필터
-                  final isSelected = _selectedAthleteId == null;
-                  return _buildFilterChip(
-                    label: '전체',
-                    icon: '🌐',
-                    isSelected: isSelected,
-                    color: primaryColor,
-                    onTap: () {
-                      setState(() {
-                        _selectedAthleteId = null;
-                        _selectedAthleteName = null;
-                      });
-                    },
-                  );
-                }
-
-                final athlete = athletes[index - 1];
-                final isSelected = _selectedAthleteId == athlete.id;
-                return _buildFilterChip(
-                  label: athlete.nameKr,
-                  icon: athlete.sport.icon,
-                  isSelected: isSelected,
-                  color: athlete.teamColor,
-                  onTap: () {
-                    // 선수 클릭 시 페이지 이동 없이 필터만 적용
-                    setState(() {
-                      _selectedAthleteId = athlete.id;
-                      _selectedAthleteName = athlete.nameKr;
-                    });
-                  },
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterChip({
-    required String label,
-    required String icon,
-    required bool isSelected,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? color : Colors.grey[100],
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? color : Colors.grey[300]!,
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : [],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(icon, style: const TextStyle(fontSize: 20)),
-            const SizedBox(height: 4),
-            Text(
-              label,
+            child: const Text(
+              '취소',
               style: TextStyle(
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color: isSelected ? Colors.white : Colors.grey[700],
+                fontSize: 13,
+                color: AppColors.primary,
+                fontWeight: FontWeight.w600,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  /// 카테고리 탭 바
-  Widget _buildCategoryTabBar(Color primaryColor) {
+  // ─────────────────────────────────────────
+  // 카테고리 탭 바
+  // ─────────────────────────────────────────
+
+  Widget _buildCategoryTabBar() {
     return Container(
-      color: Colors.white,
+      decoration: BoxDecoration(
+        color: AppColors.backgroundCard.withValues(alpha: 0.5),
+        border: Border(
+          bottom: BorderSide(
+            color: AppColors.border.withValues(alpha: 0.3),
+            width: 1,
+          ),
+        ),
+      ),
       child: TabBar(
         controller: _tabController,
         isScrollable: true,
-        labelColor: primaryColor,
-        unselectedLabelColor: Colors.grey,
-        indicatorColor: primaryColor,
-        indicatorWeight: 3,
+        labelColor: AppColors.primary,
+        unselectedLabelColor: AppColors.textMuted,
+        indicatorColor: AppColors.primary,
+        indicatorWeight: 2.5,
+        indicatorSize: TabBarIndicatorSize.label,
         tabAlignment: TabAlignment.start,
+        labelStyle: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.bold,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
+        dividerColor: Colors.transparent,
         tabs: _categories.map((category) {
           return Tab(
+            height: 40,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(category.emoji),
+                Text(category.emoji, style: const TextStyle(fontSize: 13)),
                 const SizedBox(width: 4),
                 Text(category.displayName),
               ],
@@ -352,8 +603,11 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen>
     );
   }
 
+  // ─────────────────────────────────────────
+  // 게시물 목록
+  // ─────────────────────────────────────────
+
   Widget _buildPostList(TalkCategory category) {
-    // 샘플 게시물 데이터
     var posts = _getSamplePosts();
 
     // 카테고리 필터
@@ -361,9 +615,19 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen>
       posts = posts.where((p) => p.category == category).toList();
     }
 
-    // 선수 필터 적용
+    // 선수 필터
     if (_selectedAthleteId != null) {
       posts = posts.where((p) => p.playerId == _selectedAthleteId).toList();
+    }
+
+    // 스포츠 필터
+    if (_filterSport != null) {
+      final athletes = ref.read(allAthletesProvider);
+      final sportAthleteIds = athletes
+          .where((a) => a.sport == _filterSport)
+          .map((a) => a.id)
+          .toSet();
+      posts = posts.where((p) => sportAthleteIds.contains(p.playerId)).toList();
     }
 
     // 검색어 필터
@@ -382,12 +646,13 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen>
     }
 
     return RefreshIndicator(
+      color: AppColors.primary,
+      backgroundColor: AppColors.backgroundCard,
       onRefresh: () async {
-        // TODO: 새로고침 로직
         await Future.delayed(const Duration(seconds: 1));
       },
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
         itemCount: posts.length,
         itemBuilder: (context, index) {
           return _buildPostCard(posts[index]);
@@ -403,30 +668,54 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen>
         children: [
           Text(
             category.emoji,
-            style: const TextStyle(fontSize: 60),
+            style: const TextStyle(fontSize: 48),
           ),
           const SizedBox(height: 16),
           Text(
             _selectedAthleteId != null
                 ? '해당 선수의 ${category.displayName} 게시물이 없어요'
                 : '${category.displayName} 게시물이 없어요',
-            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            style: const TextStyle(
+              fontSize: 15,
+              color: AppColors.textSecondary,
+            ),
           ),
           const SizedBox(height: 8),
-          Text(
+          const Text(
             '첫 번째 글을 작성해보세요!',
-            style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+            style: TextStyle(
+              fontSize: 13,
+              color: AppColors.textMuted,
+            ),
           ),
           if (_selectedAthleteId != null) ...[
             const SizedBox(height: 16),
-            TextButton(
-              onPressed: () {
+            GestureDetector(
+              onTap: () {
                 setState(() {
                   _selectedAthleteId = null;
                   _selectedAthleteName = null;
                 });
               },
-              child: const Text('전체 보기'),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: const Text(
+                  '전체 보기',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
             ),
           ],
         ],
@@ -434,23 +723,24 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen>
     );
   }
 
+  // ─────────────────────────────────────────
+  // 게시물 카드
+  // ─────────────────────────────────────────
+
   Widget _buildPostCard(TalkPost post) {
-    // 선수 이름 가져오기
     final athletes = ref.watch(favoriteAthletesProvider);
-    final athlete = athletes.where((a) => a.id == post.playerId).firstOrNull;
+    final athlete =
+        athletes.where((a) => a.id == post.playerId).firstOrNull;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.backgroundCard,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(
+          color: AppColors.border.withValues(alpha: 0.4),
+          width: 1,
+        ),
       ),
       child: Material(
         color: Colors.transparent,
@@ -461,23 +751,38 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen>
             // TODO: 게시물 상세 페이지 이동
           },
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 헤더
+                // 헤더: 아바타 + 이름 + 선수/카테고리 + 시간 + 뱃지
                 Row(
                   children: [
-                    CircleAvatar(
-                      radius: 18,
-                      backgroundColor: Colors.grey[200],
-                      child: Text(
-                        post.authorName.isNotEmpty
-                            ? post.authorName[0]
-                            : '?',
-                        style: TextStyle(
-                          color: Colors.grey[700],
-                          fontWeight: FontWeight.bold,
+                    // 아바타
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            (athlete?.teamColor ?? AppColors.primary)
+                                .withValues(alpha: 0.6),
+                            (athlete?.teamColor ?? AppColors.primary)
+                                .withValues(alpha: 0.3),
+                          ],
+                        ),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          post.authorName.isNotEmpty
+                              ? post.authorName[0]
+                              : '?',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
                         ),
                       ),
                     ),
@@ -492,7 +797,8 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen>
                                 post.authorName,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 14,
+                                  fontSize: 13,
+                                  color: AppColors.textPrimary,
                                 ),
                               ),
                               if (athlete != null) ...[
@@ -503,46 +809,50 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen>
                                     vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: athlete.teamColor.withValues(alpha: 0.1),
+                                    color: athlete.teamColor
+                                        .withValues(alpha: 0.15),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
                                     athlete.nameKr,
                                     style: TextStyle(
                                       fontSize: 10,
-                                      color: athlete.teamColor,
-                                      fontWeight: FontWeight.w500,
+                                      color: athlete.teamColor
+                                          .withValues(alpha: 0.9),
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ),
                               ],
                             ],
                           ),
+                          const SizedBox(height: 2),
                           Row(
                             children: [
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 4,
+                                  horizontal: 5,
                                   vertical: 1,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.grey[100],
+                                  color:
+                                      AppColors.primary.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
                                   post.category.displayName,
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontSize: 10,
-                                    color: Colors.grey[600],
+                                    color: AppColors.primaryLight,
                                   ),
                                 ),
                               ),
                               const SizedBox(width: 6),
                               Text(
                                 _formatTime(post.createdAt),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[500],
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textMuted,
                                 ),
                               ),
                             ],
@@ -550,6 +860,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen>
                         ],
                       ),
                     ),
+                    // HOT / 고정 뱃지
                     if (post.isHot)
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -557,20 +868,20 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen>
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.red.withValues(alpha: 0.1),
+                          color: AppColors.live.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text('🔥', style: TextStyle(fontSize: 12)),
-                            SizedBox(width: 4),
+                            Text('🔥', style: TextStyle(fontSize: 10)),
+                            SizedBox(width: 2),
                             Text(
                               'HOT',
                               style: TextStyle(
-                                fontSize: 11,
+                                fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.red,
+                                color: AppColors.live,
                               ),
                             ),
                           ],
@@ -583,20 +894,20 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen>
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.amber.withValues(alpha: 0.1),
+                          color: AppColors.accent.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text('📌', style: TextStyle(fontSize: 12)),
-                            SizedBox(width: 4),
+                            Text('📌', style: TextStyle(fontSize: 10)),
+                            SizedBox(width: 2),
                             Text(
                               '고정',
                               style: TextStyle(
-                                fontSize: 11,
+                                fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.amber,
+                                color: AppColors.accent,
                               ),
                             ),
                           ],
@@ -605,54 +916,57 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen>
                   ],
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
 
                 // 태그
                 if (post.tags.isNotEmpty)
-                  Wrap(
-                    spacing: 6,
-                    children: post.tags.map((tag) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          '#$tag',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: Colors.blue,
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: post.tags.map((tag) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
                           ),
-                        ),
-                      );
-                    }).toList(),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '#$tag',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.primaryLight,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
                   ),
-
-                if (post.tags.isNotEmpty) const SizedBox(height: 8),
 
                 // 제목
                 Text(
                   post.title,
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
 
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
 
                 // 내용 미리보기
                 Text(
                   post.content,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[700],
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
                     height: 1.4,
                   ),
                   maxLines: 2,
@@ -661,32 +975,48 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen>
 
                 // 이미지 있으면 표시
                 if (post.imageUrls.isNotEmpty) ...[
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     child: Container(
-                      height: 150,
+                      height: 140,
                       width: double.infinity,
-                      color: Colors.grey[200],
+                      decoration: BoxDecoration(
+                        color: AppColors.backgroundCardLight,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                       child: const Center(
-                        child: Icon(Icons.image, size: 40, color: Colors.grey),
+                        child: Icon(
+                          Icons.image_outlined,
+                          size: 36,
+                          color: AppColors.textMuted,
+                        ),
                       ),
                     ),
                   ),
                 ],
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
 
-                // 푸터
+                // 디바이더
+                Container(
+                  height: 1,
+                  color: AppColors.border.withValues(alpha: 0.3),
+                ),
+
+                const SizedBox(height: 8),
+
+                // 푸터: 좋아요, 댓글, 조회수
                 Row(
                   children: [
-                    _buildStatItem(Icons.favorite_border, post.likeCount.toString()),
-                    const SizedBox(width: 16),
                     _buildStatItem(
-                        Icons.chat_bubble_outline, post.commentCount.toString()),
+                        Icons.favorite_border, post.likeCount.toString()),
                     const SizedBox(width: 16),
-                    _buildStatItem(
-                        Icons.visibility_outlined, post.viewCount.toString()),
+                    _buildStatItem(Icons.chat_bubble_outline,
+                        post.commentCount.toString()),
+                    const SizedBox(width: 16),
+                    _buildStatItem(Icons.visibility_outlined,
+                        post.viewCount.toString()),
                   ],
                 ),
               ],
@@ -700,18 +1030,22 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen>
   Widget _buildStatItem(IconData icon, String count) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: Colors.grey[500]),
+        Icon(icon, size: 15, color: AppColors.textMuted),
         const SizedBox(width: 4),
         Text(
           count,
-          style: TextStyle(
-            fontSize: 13,
-            color: Colors.grey[500],
+          style: const TextStyle(
+            fontSize: 12,
+            color: AppColors.textMuted,
           ),
         ),
       ],
     );
   }
+
+  // ─────────────────────────────────────────
+  // 유틸
+  // ─────────────────────────────────────────
 
   String _formatTime(DateTime dateTime) {
     final now = DateTime.now();
@@ -734,29 +1068,76 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('선수 선택'),
+        backgroundColor: AppColors.backgroundCard,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: AppColors.border.withValues(alpha: 0.5),
+          ),
+        ),
+        title: const Text(
+          '선수 선택',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('글을 작성할 선수를 선택해주세요.'),
+            const Text(
+              '글을 작성할 선수를 선택해주세요.',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+              ),
+            ),
             const SizedBox(height: 16),
             ...athletes.map((athlete) {
-              return ListTile(
-                leading: Text(athlete.sport.icon,
-                    style: const TextStyle(fontSize: 24)),
-                title: Text(athlete.nameKr),
-                subtitle: Text(athlete.team),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => TalkWriteScreen(
-                        playerId: athlete.id,
-                        playerName: athlete.nameKr,
-                      ),
+              return Container(
+                margin: const EdgeInsets.only(bottom: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: AppColors.border.withValues(alpha: 0.4),
+                  ),
+                ),
+                child: ListTile(
+                  leading: Text(
+                    athlete.sport.icon,
+                    style: const TextStyle(fontSize: 22),
+                  ),
+                  title: Text(
+                    athlete.nameKr,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
                     ),
-                  );
-                },
+                  ),
+                  subtitle: Text(
+                    athlete.team,
+                    style: const TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 12,
+                    ),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => TalkWriteScreen(
+                          playerId: athlete.id,
+                          playerName: athlete.nameKr,
+                        ),
+                      ),
+                    );
+                  },
+                ),
               );
             }),
           ],
@@ -764,14 +1145,20 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
+            child: const Text(
+              '취소',
+              style: TextStyle(color: AppColors.textMuted),
+            ),
           ),
         ],
       ),
     );
   }
 
-  /// 샘플 게시물 데이터
+  // ─────────────────────────────────────────
+  // 샘플 데이터
+  // ─────────────────────────────────────────
+
   List<TalkPost> _getSamplePosts() {
     return [
       TalkPost(

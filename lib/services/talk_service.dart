@@ -13,7 +13,8 @@ class TalkService {
   final List<TalkPost> _posts = [];
   final List<TalkComment> _comments = [];
 
-  TalkService._internal() {
+  /// Mock 데이터 초기화
+  void ensureInitialized() {
     _initMockData();
   }
 

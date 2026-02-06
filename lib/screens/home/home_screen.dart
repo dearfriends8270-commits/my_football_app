@@ -17,7 +17,8 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final favoriteAthletes = ref.watch(favoriteAthletesProvider);
     final selectedAthlete = ref.watch(selectedAthleteProvider);
-    final themeState = ref.watch(appThemeProvider);
+    // themeState는 테마 변경 시 리빌드를 위해 watch 유지
+    ref.watch(appThemeProvider);
 
     if (favoriteAthletes.isEmpty) {
       return _buildEmptyState(context, ref);
@@ -211,7 +212,7 @@ class HomeScreen extends ConsumerWidget {
                 boxShadow: isSelected
                     ? [
                         BoxShadow(
-                          color: athlete.teamColor.withOpacity(0.4),
+                          color: athlete.teamColor.withValues(alpha: 0.4),
                           blurRadius: 12,
                           spreadRadius: 2,
                         ),
@@ -219,7 +220,7 @@ class HomeScreen extends ConsumerWidget {
                     : [],
               ),
               child: CircleAvatar(
-                backgroundColor: athlete.teamColor.withOpacity(0.2),
+                backgroundColor: athlete.teamColor.withValues(alpha: 0.2),
                 child: Text(
                   athlete.sport.icon,
                   style: const TextStyle(fontSize: 24),
@@ -289,9 +290,10 @@ class HomeScreen extends ConsumerWidget {
 
   /// 📅 다가오는 경기 배너 (진행중인 경기 포함)
   Widget _buildUpcomingMatchBanner(BuildContext context, Athlete athlete) {
-    // 샘플: 가장 가까운 경기 정보
-    final isLive = false; // 진행 중 여부
-    final daysUntil = 2;
+    // 샘플: 가장 가까운 경기 정보 (TODO: 실제 API 연동 시 동적 값으로 변경)
+    // ignore: dead_code
+    const bool isLive = false; // 진행 중 여부
+    const daysUntil = 2;
 
     return GestureDetector(
       onTap: () => _showMatchDetail(context, athlete, isLive),
@@ -302,12 +304,12 @@ class HomeScreen extends ConsumerWidget {
           gradient: LinearGradient(
             colors: isLive
                 ? [Colors.red.shade600, Colors.red.shade800]
-                : [athlete.teamColor, athlete.teamColor.withOpacity(0.8)],
+                : [athlete.teamColor, athlete.teamColor.withValues(alpha: 0.8)],
           ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: (isLive ? Colors.red : athlete.teamColor).withOpacity(0.3),
+              color: (isLive ? Colors.red : athlete.teamColor).withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -362,14 +364,14 @@ class HomeScreen extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     'Ligue 1',
                     style: TextStyle(
                       fontSize: 11,
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                     ),
                   ),
                 ),
@@ -386,7 +388,7 @@ class HomeScreen extends ConsumerWidget {
                         width: 48,
                         height: 48,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Center(
@@ -420,7 +422,7 @@ class HomeScreen extends ConsumerWidget {
                       isLive ? '전반 진행중' : '2월 6일 (목)',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                       ),
                     ),
                   ],
@@ -432,7 +434,7 @@ class HomeScreen extends ConsumerWidget {
                         width: 48,
                         height: 48,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Center(
@@ -457,7 +459,7 @@ class HomeScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
+                color: Colors.white.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -472,7 +474,7 @@ class HomeScreen extends ConsumerWidget {
                     '${athlete.nameKr} 출전 예정',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.white.withOpacity(0.95),
+                      color: Colors.white.withValues(alpha: 0.95),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -480,7 +482,7 @@ class HomeScreen extends ConsumerWidget {
                   Icon(
                     Icons.arrow_forward_ios,
                     size: 12,
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                   ),
                 ],
               ),
@@ -525,7 +527,7 @@ class HomeScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [athlete.teamColor, athlete.teamColor.withOpacity(0.8)],
+                    colors: [athlete.teamColor, athlete.teamColor.withValues(alpha: 0.8)],
                   ),
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -553,7 +555,7 @@ class HomeScreen extends ConsumerWidget {
                           'Ligue 1',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withValues(alpha: 0.8),
                           ),
                         ),
                       ],
@@ -577,7 +579,7 @@ class HomeScreen extends ConsumerWidget {
                               isLive ? "45' 전반" : '05:00 KST',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: Colors.white.withOpacity(0.8),
+                                color: Colors.white.withValues(alpha: 0.8),
                               ),
                             ),
                           ],
@@ -632,7 +634,7 @@ class HomeScreen extends ConsumerWidget {
           width: 56,
           height: 56,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Center(
@@ -793,9 +795,9 @@ class HomeScreen extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: isHighlighted ? Colors.blue.withOpacity(0.1) : Colors.grey[50],
+        color: isHighlighted ? Colors.blue.withValues(alpha: 0.1) : Colors.grey[50],
         borderRadius: BorderRadius.circular(8),
-        border: isHighlighted ? Border.all(color: Colors.blue.withOpacity(0.3)) : null,
+        border: isHighlighted ? Border.all(color: Colors.blue.withValues(alpha: 0.3)) : null,
       ),
       child: Row(
         children: [
@@ -1013,7 +1015,7 @@ class HomeScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
+                  color: Colors.blue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
@@ -1111,7 +1113,7 @@ class HomeScreen extends ConsumerWidget {
               : Border.all(color: Colors.grey.shade200),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -1247,7 +1249,7 @@ class HomeScreen extends ConsumerWidget {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -1259,7 +1261,7 @@ class HomeScreen extends ConsumerWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: athlete.teamColor.withOpacity(0.1),
+                    color: athlete.teamColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Center(
@@ -1352,14 +1354,14 @@ class HomeScreen extends ConsumerWidget {
                 end: Alignment.bottomRight,
                 colors: [
                   athlete.teamColor,
-                  athlete.teamColor.withOpacity(0.8),
+                  athlete.teamColor.withValues(alpha: 0.8),
                   athlete.sport.primaryColor,
                 ],
               ),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: athlete.teamColor.withOpacity(0.4),
+                  color: athlete.teamColor.withValues(alpha: 0.4),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -1373,7 +1375,7 @@ class HomeScreen extends ConsumerWidget {
                   child: Icon(
                     athlete.sport.iconData,
                     size: 180,
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                   ),
                 ),
                 Padding(
@@ -1389,7 +1391,7 @@ class HomeScreen extends ConsumerWidget {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
@@ -1438,7 +1440,7 @@ class HomeScreen extends ConsumerWidget {
                         athlete.nameKr,
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.white.withOpacity(0.8),
+                          color: Colors.white.withValues(alpha: 0.8),
                         ),
                       ),
                       const Spacer(),
@@ -1446,7 +1448,7 @@ class HomeScreen extends ConsumerWidget {
                         athlete.statSummary,
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1495,7 +1497,7 @@ class HomeScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -1507,7 +1509,7 @@ class HomeScreen extends ConsumerWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: athlete.teamColor.withOpacity(0.1),
+              color: athlete.teamColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Center(
@@ -1602,7 +1604,7 @@ class HomeScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),

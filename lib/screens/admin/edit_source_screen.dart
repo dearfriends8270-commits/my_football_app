@@ -205,7 +205,7 @@ class _EditSourceScreenState extends ConsumerState<EditSourceScreen> {
                 title: '언어',
                 children: [
                   DropdownButtonFormField<String>(
-                    value: _selectedLanguage,
+                    initialValue: _selectedLanguage,
                     decoration: const InputDecoration(
                       prefixIcon: Icon(Icons.language),
                     ),
@@ -242,7 +242,7 @@ class _EditSourceScreenState extends ConsumerState<EditSourceScreen> {
                         _isActive = value;
                       });
                     },
-                    activeColor: const Color(0xFF1E4A6E),
+                    activeThumbColor: const Color(0xFF1E4A6E),
                     contentPadding: EdgeInsets.zero,
                   ),
                 ],

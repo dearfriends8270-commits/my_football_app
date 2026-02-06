@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/theme_provider.dart';
+import '../providers/athlete_provider.dart';
 import '../utils/app_colors.dart';
 import 'home/home_screen_new.dart';
-import 'explore/explore_screen.dart';
+import 'player/player_manage_screen.dart';
 import 'ai/ai_summary_screen.dart';
 import 'talk/community_screen.dart';
 import 'settings/settings_screen.dart';
-import 'search/global_search_screen.dart';
-import 'notification/notification_screen.dart';
 
 /// 테마 프리셋 정의
 class ThemePreset {
@@ -81,12 +79,9 @@ class MainScreen extends ConsumerStatefulWidget {
 }
 
 class _MainScreenState extends ConsumerState<MainScreen> {
-  int _currentIndex = 2; // 홈을 중앙(인덱스 2)에 배치
-  String _selectedThemeId = 'psg';
-
   final List<Widget> _screens = [
     const AISummaryScreen(),
-    const ExploreScreen(),
+    const PlayerManageScreen(),
     const HomeScreenNew(), // 새로운 홈 화면
     const CommunityScreen(),
     const SettingsScreen(),
@@ -94,100 +89,134 @@ class _MainScreenState extends ConsumerState<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final currentIndex = ref.watch(mainTabIndexProvider);
+
     return Scaffold(
       backgroundColor: AppColors.background,
+      // extendBody를 true로 해서 본문이 네비게이션 바 아래까지 확장
+      extendBody: true,
       body: IndexedStack(
-        index: _currentIndex,
+        index: currentIndex,
         children: _screens,
       ),
-      bottomNavigationBar: _buildDarkBottomNav(),
+      bottomNavigationBar: _buildFloatingBottomNav(),
     );
   }
 
-  /// 다크 테마 하단 네비게이션 바
-  Widget _buildDarkBottomNav() {
+  /// 컨셉 디자인 하단 네비게이션 바 - 플로팅 + 중앙 원형 홈 버튼
+  Widget _buildFloatingBottomNav() {
     return Container(
-      decoration: BoxDecoration(
-        color: AppColors.backgroundCard,
-        border: Border(
-          top: BorderSide(color: AppColors.border, width: 1),
-        ),
+      // SafeArea 대신 직접 패딩 관리
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).padding.bottom + 8,
+        left: 16,
+        right: 16,
       ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildDarkNavItem(
-                index: 0,
-                icon: Icons.auto_awesome_outlined,
-                activeIcon: Icons.auto_awesome,
-                label: 'AI',
+      child: Stack(
+        alignment: Alignment.bottomCenter,
+        clipBehavior: Clip.none,
+        children: [
+          // 메인 네비게이션 바 (플로팅 라운드)
+          Container(
+            height: 64,
+            decoration: BoxDecoration(
+              color: AppColors.backgroundCard.withValues(alpha: 0.95),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: AppColors.border.withValues(alpha: 0.6),
+                width: 1,
               ),
-              _buildDarkNavItem(
-                index: 1,
-                icon: Icons.person_outline,
-                activeIcon: Icons.person,
-                label: '선수',
-              ),
-              _buildHomeNavItem(), // 중앙 홈 버튼
-              _buildDarkNavItem(
-                index: 3,
-                icon: Icons.chat_bubble_outline,
-                activeIcon: Icons.chat_bubble,
-                label: '톡',
-              ),
-              _buildDarkNavItem(
-                index: 4,
-                icon: Icons.settings_outlined,
-                activeIcon: Icons.settings,
-                label: '설정',
-              ),
-            ],
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
+                  spreadRadius: 2,
+                ),
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.05),
+                  blurRadius: 40,
+                  offset: const Offset(0, -2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                // 소식 탭
+                _buildNavItem(
+                  index: 0,
+                  icon: Icons.newspaper_outlined,
+                  activeIcon: Icons.newspaper,
+                  label: '소식',
+                ),
+                // 선수 탭
+                _buildNavItem(
+                  index: 1,
+                  icon: Icons.person_outline,
+                  activeIcon: Icons.person,
+                  label: '선수',
+                ),
+                // 중앙 홈 버튼 공간 확보
+                const SizedBox(width: 64),
+                // 톡 탭
+                _buildNavItem(
+                  index: 3,
+                  icon: Icons.chat_bubble_outline,
+                  activeIcon: Icons.chat_bubble,
+                  label: '톡',
+                ),
+                // 설정 탭
+                _buildNavItem(
+                  index: 4,
+                  icon: Icons.settings_outlined,
+                  activeIcon: Icons.settings,
+                  label: '설정',
+                ),
+              ],
+            ),
           ),
-        ),
+
+          // 중앙 홈 버튼 (원형, 위로 돌출)
+          Positioned(
+            bottom: 20,
+            child: _buildCenterHomeButton(),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildDarkNavItem({
+  /// 일반 네비게이션 아이템
+  Widget _buildNavItem({
     required int index,
     required IconData icon,
     required IconData activeIcon,
     required String label,
   }) {
-    final isSelected = _currentIndex == index;
+    final isSelected = ref.watch(mainTabIndexProvider) == index;
 
     return GestureDetector(
       onTap: () {
-        setState(() {
-          _currentIndex = index;
-        });
+        ref.read(mainTabIndexProvider.notifier).state = index;
       },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary.withOpacity(0.2)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 56,
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               isSelected ? activeIcon : icon,
               color: isSelected ? AppColors.primary : AppColors.textMuted,
-              size: 24,
+              size: 22,
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                 color: isSelected ? AppColors.primary : AppColors.textMuted,
               ),
@@ -198,48 +227,45 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     );
   }
 
-  /// 중앙 홈 버튼 (강조)
-  Widget _buildHomeNavItem() {
-    final isSelected = _currentIndex == 2;
+  /// 중앙 원형 홈 버튼 (컨셉 이미지: 파란색 큰 원, 위로 돌출)
+  Widget _buildCenterHomeButton() {
+    final isSelected = ref.watch(mainTabIndexProvider) == 2;
 
     return GestureDetector(
       onTap: () {
-        setState(() {
-          _currentIndex = 2;
-        });
+        ref.read(mainTabIndexProvider.notifier).state = 2;
       },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Container(
+        width: 56,
+        height: 56,
         decoration: BoxDecoration(
-          gradient: isSelected
-              ? AppColors.primaryGradient
-              : null,
-          color: isSelected ? null : AppColors.backgroundLight,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
-            width: isSelected ? 0 : 1,
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isSelected ? Icons.home : Icons.home_outlined,
-              color: isSelected ? Colors.white : AppColors.textMuted,
-              size: 26,
+          shape: BoxShape.circle,
+          gradient: AppColors.primaryGradient,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.5),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+              spreadRadius: 0,
             ),
-            const SizedBox(height: 4),
-            Text(
-              '홈',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: isSelected ? Colors.white : AppColors.textMuted,
-              ),
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.2),
+              blurRadius: 24,
+              offset: const Offset(0, 2),
+              spreadRadius: 4,
             ),
           ],
+          border: Border.all(
+            color: isSelected
+                ? AppColors.primaryLight.withValues(alpha: 0.6)
+                : AppColors.primary.withValues(alpha: 0.3),
+            width: 2,
+          ),
+        ),
+        child: Icon(
+          isSelected ? Icons.home : Icons.home_outlined,
+          color: Colors.white,
+          size: 26,
         ),
       ),
     );

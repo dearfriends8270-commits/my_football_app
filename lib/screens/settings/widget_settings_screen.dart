@@ -547,7 +547,7 @@ class _WidgetSettingsScreenState extends State<WidgetSettingsScreen> {
                 _showCountdown = value;
               });
             },
-            activeColor: const Color(0xFF1E4A6E),
+            activeThumbColor: const Color(0xFF1E4A6E),
           ),
           const Divider(height: 1),
           SwitchListTile(
@@ -559,7 +559,7 @@ class _WidgetSettingsScreenState extends State<WidgetSettingsScreen> {
                 _showStats = value;
               });
             },
-            activeColor: const Color(0xFF1E4A6E),
+            activeThumbColor: const Color(0xFF1E4A6E),
           ),
           const Divider(height: 1),
           SwitchListTile(
@@ -571,7 +571,7 @@ class _WidgetSettingsScreenState extends State<WidgetSettingsScreen> {
                 _showLiveBadge = value;
               });
             },
-            activeColor: const Color(0xFF1E4A6E),
+            activeThumbColor: const Color(0xFF1E4A6E),
           ),
         ],
       ),

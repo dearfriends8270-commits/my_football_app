@@ -635,7 +635,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen>
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: primaryColor,
+            activeThumbColor: primaryColor,
           ),
         ],
       ),

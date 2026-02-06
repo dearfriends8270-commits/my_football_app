@@ -586,7 +586,7 @@ class _MatchDayScreenState extends State<MatchDayScreen>
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: const Color(0xFF1E4A6E),
+            activeThumbColor: const Color(0xFF1E4A6E),
           ),
         ],
       ),
