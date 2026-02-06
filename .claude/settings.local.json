@@ -14,7 +14,12 @@
       "Bash(flutter build:*)",
       "Bash(flutter test:*)",
       "Bash(flutter install:*)",
-      "Bash(adb:*)"
+      "Bash(adb:*)",
+      "Bash(powershell:*)",
+      "Bash(du:*)",
+      "Bash(flutter clean:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)"
     ]
   }
 }

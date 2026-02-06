@@ -66,9 +66,6 @@ dependencies:
   # Google Sign In
   google_sign_in: ^6.2.2
 
-  # Cached Network Image
-  cached_network_image: ^3.3.1
-
 dev_dependencies:
   flutter_test:
     sdk: flutter

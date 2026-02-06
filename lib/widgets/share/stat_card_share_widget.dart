@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/athlete.dart';
+import '../../models/sport_type.dart';
 
 /// 인스타그램 스탯 카드 공유 위젯 (기획문서 4.2.6)
 /// 경기 종료 후 자동 생성되는 SNS 공유용 인포그래픽
